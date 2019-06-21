@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Linq;
 using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using MazeRetreat.Api.DataAccess;
 using Microsoft.EntityFrameworkCore;
@@ -15,14 +17,16 @@ namespace MazeRetreat.Api.Logic
             _dbContext = dbContext;
         }
 
-        public async Task<Image> StoreImage(Byte[] binaryImage)
+        public async Task<Guid?> GetImageByChecksum(String data)
         {
-            var checksum = CalculateChecksum(binaryImage);
-            var existingImage = await _dbContext.Images.SingleOrDefaultAsync(x => x.Checksum == checksum);
-            if (existingImage != null)
-            {
-                return existingImage;
-            }
+            var checksum = CalculateChecksum(data);
+            var imageId = await _dbContext.Images.Where(x => x.Checksum == checksum).Select(x => x.Id).SingleOrDefaultAsync();
+            return imageId == Guid.Empty ? (Guid?)null : imageId;
+        }
+
+        public async Task<Guid> StoreImage(Byte[] binaryImage, String data)
+        {
+            var checksum = CalculateChecksum(data);
 
             var image = new Image
             {
@@ -30,9 +34,11 @@ namespace MazeRetreat.Api.Logic
                 Data = binaryImage,
                 Checksum = checksum
             };
+
             await _dbContext.Images.AddAsync(image);
             await _dbContext.SaveChangesAsync();
-            return image;
+
+            return image.Id;
         }
 
         public async Task<Image> LoadImage(Guid imageId)
@@ -40,10 +46,10 @@ namespace MazeRetreat.Api.Logic
             return await _dbContext.Images.SingleOrDefaultAsync(x => x.Id == imageId);
         }
 
-        private String CalculateChecksum(Byte[] bytes)
+        private String CalculateChecksum(String data)
         {
             MD5 md5 = MD5.Create();
-            var hashedBytes = md5.ComputeHash(bytes);
+            var hashedBytes = md5.ComputeHash(Encoding.UTF8.GetBytes(data));
             return BitConverter.ToString(hashedBytes).Replace("-", "").ToLowerInvariant();
         }
     }

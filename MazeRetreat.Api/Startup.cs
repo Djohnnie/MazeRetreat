@@ -36,11 +36,11 @@ namespace MazeRetreat.Api
 
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("Maze Retreat 2019", new Info
+                c.SwaggerDoc("v2019", new Info
                 {
                     Version = "Maze Retreat 2019",
                     Title = "Maze Retreat 2019",
-                    Description = "This page provides some documentation on the available endpoints for the Hack The Future 2018 .NET Challenge.",
+                    Description = "This page provides some information about the June 2019 MazeRetreat for Involved!",
                 });
                 c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFile));
             });
@@ -54,15 +54,12 @@ namespace MazeRetreat.Api
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
+            app.UseDeveloperExceptionPage();
 
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
-                c.SwaggerEndpoint("/swagger/swagger.json", "Maze Retreat 2019");
+                c.SwaggerEndpoint("/swagger/v2019/swagger.json", "Maze Retreat 2019");
             });
 
             app.UseMiddleware<RequestUriMiddleware>();

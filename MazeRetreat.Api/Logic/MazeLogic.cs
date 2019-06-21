@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Linq;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using MazeRetreat.Api.DataAccess;
 using MazeRetreat.Api.Extensions;
@@ -7,6 +7,7 @@ using MazeRetreat.Api.Helpers;
 using MazeRetreat.Api.MazeSolver;
 using MazeRetreat.Api.Model;
 using Microsoft.EntityFrameworkCore;
+using Maze = MazeRetreat.Api.DataAccess.Maze;
 
 namespace MazeRetreat.Api.Logic
 {
@@ -29,10 +30,55 @@ namespace MazeRetreat.Api.Logic
             _mazeRetreatContext = mazeRetreatContext;
         }
 
-        public async Task<Challenge> GetFirstMaze()
+        public async Task<List<Challenge>> GetAllMazes()
         {
-            var mazeId = await _dbContext.Mazes.OrderBy(x => x.SysId).Select(x => (Guid?)x.Id).FirstOrDefaultAsync();
-            return mazeId.HasValue ? await GetMaze(mazeId.Value) : null;
+            var challenges = new List<Challenge>();
+            var mazes = await _dbContext.Mazes.ToListAsync();
+            foreach (var maze in mazes)
+            {
+                challenges.Add(await MapChallenge(maze));
+            }
+
+            return challenges;
+        }
+
+        private async Task<Challenge> MapChallenge(Maze maze)
+        {
+            String solution = null;
+            String renderedSolution = null;
+
+            if (maze.SysId == 1)
+            {
+                var mazeData = maze.Data.Base64Decode();
+                solution = Solve(mazeData);
+
+                var solutionImageId = await _imageLogic.GetImageByChecksum(solution);
+                if (!solutionImageId.HasValue)
+                {
+                    byte[] renderingData = _renderingLogic.RenderMaze(mazeData, solution);
+                    solutionImageId = await _imageLogic.StoreImage(renderingData, solution);
+                }
+
+                renderedSolution = $"http://{_mazeRetreatContext.HostUri}/api/rendering/{solutionImageId}";
+            }
+
+            var imageId = await _imageLogic.GetImageByChecksum(maze.Data);
+            if (!imageId.HasValue)
+            {
+                var mazeData = maze.Data.Base64Decode();
+                byte[] renderingData = _renderingLogic.RenderMaze(mazeData, null);
+                imageId = await _imageLogic.StoreImage(renderingData, maze.Data);
+            }
+
+            return new Challenge
+            {
+                Id = maze.Id,
+                Description = maze.Description,
+                Maze = maze.Data,
+                Solution = solution,
+                RenderedMaze = $"http://{_mazeRetreatContext.HostUri}/api/rendering/{imageId}",
+                RenderedSolution = renderedSolution
+            };
         }
 
         public async Task<Challenge> GetMaze(Guid id)
@@ -42,35 +88,68 @@ namespace MazeRetreat.Api.Logic
             if (maze != null)
             {
                 var mazeData = maze.Data.Base64Decode();
-                byte[] renderingData = _renderingLogic.RenderMaze(mazeData, null);
-                var image = await _imageLogic.StoreImage(renderingData);
-                var solution = maze.SysId == 1 ? Solve(mazeData) : null;
+                var imageId = await _imageLogic.GetImageByChecksum(maze.Data);
+                if (!imageId.HasValue)
+                {
+                    byte[] renderingData = _renderingLogic.RenderMaze(mazeData, null);
+                    imageId = await _imageLogic.StoreImage(renderingData, maze.Data);
+                }
 
                 return new Challenge
                 {
                     Id = maze.Id,
                     Maze = maze.Data,
-                    Solution = solution,
-                    RenderedMaze = $"http://{_mazeRetreatContext.HostUri}/api/rendering/{image.Id}"
+                    RenderedMaze = $"http://{_mazeRetreatContext.HostUri}/api/rendering/{imageId}"
                 };
             }
 
             return null;
         }
 
-        public async Task<Image> CheckSolution(Guid id, Solution solution)
+        public async Task<Feedback> CheckSolution(Guid id, Solution solution)
         {
             var maze = await _dbContext.Mazes.SingleOrDefaultAsync(x => x.Id == id);
 
             if (maze != null)
             {
-                var mazeData = maze.Data.Base64Decode();
-                string calculatedSolutionData = Solve(mazeData);
+                string renderedMaze = await GetRenderedMaze(maze);
 
-                if (solution.Data == calculatedSolutionData)
+                try
                 {
-                    byte[] renderingData = _renderingLogic.RenderMaze(mazeData, calculatedSolutionData);
-                    return await _imageLogic.StoreImage(renderingData);
+                    var mazeData = maze.Data.Base64Decode();
+                    string calculatedSolutionData = Solve(mazeData);
+
+                    string renderedSolution = await GetRenderedMaze(maze, solution.Data);
+                    string myRenderedSolution = await GetRenderedMaze(maze, calculatedSolutionData);
+
+                    if (solution.Data == calculatedSolutionData)
+                    {
+                        return new Feedback
+                        {
+                            Description = "Your solution looks very nice :)",
+                            YourSolution = solution.Data,
+                            RenderedMaze = renderedMaze,
+                            YourRenderedSolution = renderedSolution
+                        };
+                    }
+
+                    return new Feedback
+                    {
+                        Description = "My solution is different than yours, and I am the allmighty know-it-all :p",
+                        YourSolution = solution.Data,
+                        RenderedMaze = renderedMaze,
+                        YourRenderedSolution = renderedSolution,
+                        MyRenderedSolution = myRenderedSolution
+                    };
+                }
+                catch
+                {
+                    return new Feedback
+                    {
+                        Description = "Your solution made me very sad! I can't even decode it properly :(",
+                        YourSolution = solution.Data,
+                        RenderedMaze = renderedMaze
+                    };
                 }
             }
 
@@ -81,6 +160,24 @@ namespace MazeRetreat.Api.Logic
         {
             Solver solver = new Solver();
             return solver.Solve(mazeData);
+        }
+
+        private async Task<String> GetRenderedMaze(Maze maze, String solutionData = null)
+        {
+            if (maze != null)
+            {
+                var mazeData = maze.Data.Base64Decode();
+                var imageId = await _imageLogic.GetImageByChecksum(solutionData ?? maze.Data);
+                if (!imageId.HasValue)
+                {
+                    byte[] renderingData = _renderingLogic.RenderMaze(mazeData, solutionData);
+                    imageId = await _imageLogic.StoreImage(renderingData, solutionData ?? maze.Data);
+                }
+
+                return $"http://{_mazeRetreatContext.HostUri}/api/rendering/{imageId}";
+            }
+
+            return null;
         }
     }
 }

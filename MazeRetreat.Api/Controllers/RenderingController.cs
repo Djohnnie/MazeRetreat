@@ -20,18 +20,16 @@ namespace MazeRetreat.Api.Controllers
             _renderingLogic = renderingLogic;
         }
 
+        /// <summary>
+        /// This endpoint will provide you with a PNG image, based on the unique identifier of the rendering you are requesting.
+        /// </summary>
+        /// <param name="id">The unique identifier of the rendering you are requesting.</param>
+        /// <returns>A PNG image.</returns>
         [HttpGet, Route("{id}")]
         public async Task<IActionResult> Get(Guid id)
         {
             var image = await _imageLogic.LoadImage(id);
             return image != null ? (IActionResult)File(image.Data, "image/png") : NotFound();
         }
-
-        //[HttpPost]
-        //public async Task<IActionResult> Render([FromBody]String mazeData)
-        //{
-        //    var image = await _renderingLogic.RenderMaze(mazeData);
-        //    var image = await _imageLogic.StoreImage()
-        //}
     }
 }

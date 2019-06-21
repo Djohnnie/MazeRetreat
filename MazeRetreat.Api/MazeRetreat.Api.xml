@@ -4,5 +4,95 @@
         <name>MazeRetreat.Api</name>
     </assembly>
     <members>
+        <member name="M:MazeRetreat.Api.Controllers.MazeController.GetAllMazes">
+            <summary>
+            This endpoint provides you with a list of all maze challenges.
+            </summary>
+            <returns>A list of challenges, containing all maze challenges for this CodeRetreat.</returns>
+            <remarks>A challenge will contain a unique identifier, a short description, a Base64 encoded layout pattern and a link to a rendered image.</remarks>
+        </member>
+        <member name="M:MazeRetreat.Api.Controllers.MazeController.GetMaze(System.Guid)">
+            <summary>
+            This endpoint provides you with a single maze challenge based on its unique identifier.
+            </summary>
+            <param name="id">The unique identifier of the maze challenge you want to retrieve.</param>
+            <returns>The challenge you have requested.</returns>
+            <remarks>A challenge will contain a unique identifier, a short description, a Base64 encoded layout pattern and a link to a rendered image.</remarks>
+        </member>
+        <member name="M:MazeRetreat.Api.Controllers.MazeController.PutSolution(System.Guid,MazeRetreat.Api.Model.Solution)">
+            <summary>
+            This endpoint should be used, to send your solution. You will receive some feedback.
+            </summary>
+            <param name="id">The unique identifier of the maze challenge you want send your solution for.</param>
+            <param name="solution">An object with data property containing your proposed solution.</param>
+            <returns>Some feedback about your proposed solution.</returns>
+        </member>
+        <member name="M:MazeRetreat.Api.Controllers.RenderingController.Get(System.Guid)">
+            <summary>
+            This endpoint will provide you with a PNG image, based on the unique identifier of the rendering you are requesting.
+            </summary>
+            <param name="id">The unique identifier of the rendering you are requesting.</param>
+            <returns>A PNG image.</returns>
+        </member>
+        <member name="P:MazeRetreat.Api.Model.Challenge.Id">
+            <summary>
+            The unique identifier for the challenge maze.
+            </summary>
+        </member>
+        <member name="P:MazeRetreat.Api.Model.Challenge.Description">
+            <summary>
+            A description for this specific maze.
+            </summary>
+        </member>
+        <member name="P:MazeRetreat.Api.Model.Challenge.Maze">
+            <summary>
+            A Base64 encoded string containing the maze data.
+            </summary>
+        </member>
+        <member name="P:MazeRetreat.Api.Model.Challenge.Solution">
+            <summary>
+            A semi-colon separated list of steps needed to traverse the maze.
+            </summary>
+        </member>
+        <member name="P:MazeRetreat.Api.Model.Challenge.RenderedMaze">
+            <summary>
+            A link to a rendered image of the maze.
+            </summary>
+        </member>
+        <member name="P:MazeRetreat.Api.Model.Challenge.RenderedSolution">
+            <summary>
+            A link to a rendered image of the solution.
+            </summary>
+        </member>
+        <member name="P:MazeRetreat.Api.Model.Feedback.Description">
+            <summary>
+            A descriptive feedback on your solution.
+            </summary>
+        </member>
+        <member name="P:MazeRetreat.Api.Model.Feedback.YourSolution">
+            <summary>
+            The solution you have provided.
+            </summary>
+        </member>
+        <member name="P:MazeRetreat.Api.Model.Feedback.YourRenderedSolution">
+            <summary>
+            A link to a rendered image of your solution.
+            </summary>
+        </member>
+        <member name="P:MazeRetreat.Api.Model.Feedback.MyRenderedSolution">
+            <summary>
+            A link to a rendered image of my solution, if you want to cheat.
+            </summary>
+        </member>
+        <member name="P:MazeRetreat.Api.Model.Feedback.RenderedMaze">
+            <summary>
+            A link to a rendered image of the maze without solution.
+            </summary>
+        </member>
+        <member name="P:MazeRetreat.Api.Model.Solution.Data">
+            <summary>
+            Your solution data: a semi-colon separated list of steps. For example: 1:0,0;2:1,0;3:1,1.
+            </summary>
+        </member>
     </members>
 </doc>
