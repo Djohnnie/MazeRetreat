@@ -98,6 +98,7 @@ namespace MazeRetreat.Api.Logic
                 return new Challenge
                 {
                     Id = maze.Id,
+                    Description = maze.Description,
                     Maze = maze.Data,
                     RenderedMaze = $"http://{_mazeRetreatContext.HostUri}/api/rendering/{imageId}"
                 };
@@ -166,6 +167,7 @@ namespace MazeRetreat.Api.Logic
         {
             if (maze != null)
             {
+                if (solutionData != null) { solutionData = $"{maze.Data}-{solutionData}"; }
                 var mazeData = maze.Data.Base64Decode();
                 var imageId = await _imageLogic.GetImageByChecksum(solutionData ?? maze.Data);
                 if (!imageId.HasValue)

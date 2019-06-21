@@ -28,7 +28,7 @@ namespace MazeRetreat.Api.MazeSolver
 
         private Maze BuildMaze(String mazeData)
         {
-            var mazeRows = mazeData.Split(Environment.NewLine,StringSplitOptions.RemoveEmptyEntries);
+            var mazeRows = mazeData.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
 
             var maze = new Maze(mazeRows[0].Length, mazeRows.Length);
 

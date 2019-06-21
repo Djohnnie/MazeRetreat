@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using MazeRetreat.Api.Extensions;
 
 namespace MazeRetreat.Api.Logic
 {
@@ -99,7 +100,7 @@ namespace MazeRetreat.Api.Logic
 
                     if (solutionData != null)
                     {
-                        var steps = solutionData.Split(";", StringSplitOptions.RemoveEmptyEntries);
+                        var steps = solutionData.Replace($"{mazeData.Base64Encode()}-", "").Split(";", StringSplitOptions.RemoveEmptyEntries);
                         foreach (var step in steps)
                         {
                             var parts = step.Split(":", StringSplitOptions.RemoveEmptyEntries);
